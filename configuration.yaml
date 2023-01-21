@@ -1,0 +1,16 @@
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - 172.16.0.0/12
+    - <server_ip_running_the python_script>
+
+homeassistant:
+  auth_providers:
+   - type: trusted_networks
+     trusted_networks:
+      - 192.168.0.0/24
+      - fd00::/8
+      - 127.0.0.1
+      - ::1
+      #allow_bypass_login: true
