@@ -10,6 +10,7 @@ import binascii
 import select
 from urllib.parse import urlparse, urlsplit, parse_qsl
 
+import time
 import logging
 import os
 
@@ -44,9 +45,19 @@ def replace_ha_strings(body):
         r'/service_worker.js',
         r'/manifest.json',
     }
-    body = re.sub(r'"/lovelace/',   r'"' + args.webroot + r'/lovelace/', body)
+    quote_patterns = {
+        r'/lovelace',
+        r'/energy',
+        r'/map',
+        r'/config',
+        r'/profile',
+        r'/history',
+        r'/media-browser',
+    }
     for pattern in patterns:
         body = re.sub(pattern,      args.webroot + pattern, body)
+    for pattern in quote_patterns:
+        body = re.sub(r'"'+pattern, r'"' + args.webroot + pattern, body)
     return body
 
 def apply_webroot(body):
