@@ -136,6 +136,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                             rep_header[hdr.decode()]=val.decode()
                         #self.wfile.write(l)
                         eol = line.find(b'\n')
+                    time.sleep(0.02)
                 #self.wfile.flush()
                 self.send_response(response_code)
                 log.debug(f"Websocket: sent code {response_code}")
@@ -147,7 +148,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                 # websocket mode
                 selectset = [self.rfile, upstream_sock]
                 while True:
-                    readable, writable, exceptional = select.select(selectset, selectset, selectset)
+                    readable, writable, exceptional = select.select(selectset, selectset, selectset, 100)
                     if self.rfile in readable:
                         data = self.rfile.read1() # ignore buffering
                         if data and len(data) > 0:
@@ -159,6 +160,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                             log.debug(f"Websocket: server>>client {str(data)}")
                             self.wfile.write(data)
                             self.wfile.flush()
+                    time.sleep(0.02) # ugly CPU load reduction, should find the underlaying reason instead
             else:
                 # regular GET reverse proxying
                 resp = requests.get(url, headers=merge_two_dicts(req_header, default_headers()), verify=False, stream=True)
