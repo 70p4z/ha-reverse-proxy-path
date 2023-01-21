@@ -12,12 +12,14 @@ NOTES:
 - hacs-reverse-proxy rewrites content sent by the HA server to inject webroot
 
 ## Setup
-. git clone
-. python hacs-reverse-proxy.py --webroot <WEBROOT> --upstream <HA server and port>
+- git clone
+- python hacs-reverse-proxy.py --webroot <WEBROOT> --upstream <HA server and port>
 
 ### Example
 https://acme.com/ha => http://server:8123/
+
 $config nginx here to redirect acme.com/ha toward localhost:8124 (see commited script)
+
 python hacs-reverse-proxy.py --webroot /ha --upstream http://server:8123
 
 ## Disclaimer
