@@ -29,7 +29,8 @@ def merge_two_dicts(x, y):
 def default_headers():
     headers = {
         'Host': '',#args.upstream
-        'accept-encoding': ''
+        'accept-encoding': '',
+        'referer': ''
     }
 
     return headers
@@ -38,7 +39,7 @@ def replace_ha_strings(body):
     # sub ( patt, repl, string )
     patterns = {
         r'/api/',
-        r'/auth/',
+        r'/auth/', # TODO 'config/auth' must not be rewritten!
         r'/frontend_',
         r'/local/',
         r'/static/',
@@ -46,7 +47,10 @@ def replace_ha_strings(body):
         r'/manifest.json',
     }
     quote_patterns = {
-        r'/lovelace',
+        #r'/lovelace',
+        #r'lovelace/',
+        #startsWith(\"/lovelace/\")
+
         r'/energy',
         r'/map',
         r'/config',
@@ -55,9 +59,13 @@ def replace_ha_strings(body):
         r'/media-browser',
     }
     for pattern in patterns:
-        body = re.sub(pattern,      args.webroot + pattern, body)
+        body = re.sub(r'([^a-zA-Z0-9_])' + pattern, r'\1' + args.webroot + pattern, body)
     for pattern in quote_patterns:
         body = re.sub(r'"'+pattern, r'"' + args.webroot + pattern, body)
+    # for pattern in quote_patterns:
+    #     body = re.sub(r'\''+pattern, r'\'' + args.webroot + pattern, body)
+    #body = re.sub(r'hass,\"/lovelace', r'hass,\"'+args.webroot+r'/lovelace', body)
+
     return body
 
 def apply_webroot(body):
