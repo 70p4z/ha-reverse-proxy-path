@@ -47,10 +47,6 @@ def replace_ha_strings(body):
         r'/manifest.json',
     }
     quote_patterns = {
-        #r'/lovelace',
-        #r'lovelace/',
-        #startsWith(\"/lovelace/\")
-
         r'/energy',
         r'/map',
         r'/config',
@@ -64,8 +60,23 @@ def replace_ha_strings(body):
         body = re.sub(r'"'+pattern, r'"' + args.webroot + pattern, body)
     # for pattern in quote_patterns:
     #     body = re.sub(r'\''+pattern, r'\'' + args.webroot + pattern, body)
-    #body = re.sub(r'hass,\"/lovelace', r'hass,\"'+args.webroot+r'/lovelace', body)
 
+    # call args may be real complex, and contains call to other func with args, this is too naive!
+    #body = re.sub(r'history\.pushState\(([^,]*),([^,]*),([^,]*)\)', r'history.pushState(\1,\2,"'+args.webroot+r'/"+\3)', body)
+    #body = re.sub(r'history\.replaceState\(([^,]*),([^,]*),([^,]*)\)', r'history.replaceState(\1,\2,"'+args.webroot+r'/"+\3)', body)
+
+
+    body = re.sub(r'[a-zA-Z0-9_\.]*history\.pushState', r'hpS', body)
+    body = re.sub(r'[a-zA-Z0-9_\.]*history\.replaceState', r'hrS', body)
+    body = re.sub(r'\.\.\.history\.state([^a-zA-Z0-9_])', r'...window.history_state\1', body)
+    body = re.sub(r'[a-zA-Z0-9_\.]*history\.state([^a-zA-Z0-9_])', r'window.history_state\1', body)
+    """
+    """
+    body = re.sub(r'</body>', r'''<script>
+  function hpS(d,o,url){console.log("push "+url);window.history_state=url;window.history.pushState(d,o,"'''+args.webroot+'''/"+url)};
+  function hrS(d,o,url){console.log("replace "+url);window.history_state=url;window.history.replaceState(d,o,"'''+args.webroot+'''/"+url)}
+  </script></body>''', body)
+    #body = re.sub(r'\''+pattern, r'\'' + args.webroot + pattern, body)
     return body
 
 def apply_webroot(body):
@@ -77,10 +88,9 @@ def apply_webroot(body):
         #reencode after
         if body_is_bytes:
             body = body.encode(encoding=ENCODING)
-    except AttributeError:
-        body = replace_ha_strings(body)
-        pass
-    except UnicodeDecodeError:
+    except (UnicodeDecodeError, AttributeError):
+        #print (body)
+        #body = replace_ha_strings(body)
         pass
     return body
 
@@ -98,7 +108,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
             url = '{}{}'.format(args.upstream.lower(), self.path)
             req_header = self.parse_headers()
 
-            if "upgrade" in req_header and req_header['upgrade'] == "websocket":
+            if "upgrade" in req_header and req_header['upgrade'].lower() == "websocket":
                 u = urlsplit(url)
                 scheme, netloc, path = u.scheme, u.netloc, (u.path + '?' + u.query if u.query else u.path)
                 if netloc.find(':') == -1:
@@ -153,6 +163,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                         self.send_header(key, rep_header[key])
                         log.debug(f"Websocket: sent header {key}: {rep_header[key]}")
                 self.end_headers()
+                sent = True
                 # websocket mode
                 selectset = [self.rfile, upstream_sock]
                 while True:
